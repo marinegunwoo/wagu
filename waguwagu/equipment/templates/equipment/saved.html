@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>저장된 정보</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        ul { list-style:none; padding-left:0; }
+        li { margin-bottom:15px; padding:10px; background:#f2f2f2; border-radius:5px; }
+        input { width: 90%; padding:5px; margin-bottom:5px; }
+        button { margin-right:5px; padding:5px 10px; border:none; border-radius:3px; cursor:pointer; }
+        .edit-btn { background:#2196F3; color:white; }
+        .delete-btn { background:#f44336; color:white; }
+        a { display:inline-block; margin-top:20px; text-decoration:none; color:white; background:#4caf50; padding:10px 15px; border-radius:5px; }
+    </style>
+</head>
+<body>
+    <h2>저장된 정보 목록</h2>
+    <ul>
+        {% for item in restaurants %}
+        <li data-id="{{ item.id }}">
+            <strong>이름:</strong> <input type="text" class="name" value="{{ item.name }}"> <br>
+            <strong>메뉴:</strong> <input type="text" class="menu" value="{{ item.menu }}"> <br>
+            <strong>가격:</strong> <input type="number" class="price" value="{{ item.price }}"> <br>
+            <strong>위치:</strong> <input type="text" class="location" value="{{ item.location }}"> <br>
+            <strong>메모:</strong> <input type="text" class="memo" value="{{ item.memo }}"> <br>
+            <strong>위도:</strong> <input type="text" class="latitude" value="{{ item.latitude }}"> <br>
+            <strong>경도:</strong> <input type="text" class="longitude" value="{{ item.longitude }}"> <br>
+            <button class="edit-btn">수정</button>
+            <button class="delete-btn">삭제</button>
+        </li>
+        {% empty %}
+        <li>아직 저장된 정보가 없습니다</li>
+        {% endfor %}
+    </ul>
+
+    <a href="/map/">← 지도 화면으로 돌아가기</a>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            document.cookie.split(';').forEach(function(c){
+                const cookie = c.trim();
+                if(cookie.substring(0, name.length+1) === (name+'=')){
+                    cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+                }
+            });
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // 수정
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const li = btn.closest('li');
+            const id = li.dataset.id;
+            const data = {
+                name: li.querySelector('.name').value,
+                menu: li.querySelector('.menu').value,
+                price: parseFloat(li.querySelector('.price').value),
+                location: li.querySelector('.location').value,
+                latitude: parseFloat(li.querySelector('.latitude').value),
+                longitude: parseFloat(li.querySelector('.longitude').value),
+                memo: li.querySelector('.memo').value
+            };
+            fetch(`/restaurants/${id}/`, {
+                method:'PUT',
+                headers: {
+                    'Content-Type':'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(data)
+            }).then(res => {
+                if(res.ok) alert('수정 완료!');
+                else alert('수정 실패');
+            });
+        });
+    });
+
+    // 삭제
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if(!confirm('정말 삭제하시겠습니까?')) return;
+            const li = btn.closest('li');
+            const id = li.dataset.id;
+            fetch(`/restaurants/${id}/`, {
+                method:'DELETE',
+                headers: {'X-CSRFToken': csrftoken}
+            }).then(res => {
+                if(res.status === 204){
+                    li.remove();
+                    alert('삭제 완료!');
+                } else {
+                    alert('삭제 실패');
+                }
+            });
+        });
+    });
+});
+</script>
+</body>
+</html>
